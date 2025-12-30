@@ -29,6 +29,12 @@ expect class CameraProvider {
     fun stopSession()
 
     /**
+     * Update the current pose from AR or sensors.
+     * Should be called every frame (from game loop) to get the latest tracking data.
+     */
+    fun updatePose()
+
+    /**
      * Reactive stream of pose updates.
      * Emits new Pose values as the device moves and rotates.
      */

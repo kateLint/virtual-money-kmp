@@ -90,7 +90,7 @@ actual class CameraProvider(private val context: Context) {
      * Update the current pose from ARCore or sensors.
      * Should be called every frame to get the latest tracking data.
      */
-    fun updatePose() {
+    actual fun updatePose() {
         if (isUsingAR) {
             updatePoseFromARCore()
         } else {
