@@ -32,9 +32,8 @@ class GameEngine(
         private const val TICK_INTERVAL_MS = 1000L
         private const val MIN_HAPOALIM_COIN_COUNT = 4      // Always keep at least 4 Hapoalim coins
         private const val MIN_PENALTY_COIN_COUNT = 3       // Always keep at least 3 penalty coins
-        private const val HAPOALIM_RESPAWN_DELAY_MS = 1000L // Hapoalim coin respawns after 1 second
         private const val COIN_CLEANUP_INTERVAL_MS = 100L // Check for expired coins every 100ms
-        private const val COIN_MAINTENANCE_INTERVAL_MS = 500L // Check coin counts every 500ms
+        private const val COIN_MAINTENANCE_INTERVAL_MS = 200L // Check coin counts every 200ms (fast response)
         private const val DIFFICULTY_INCREASE_INTERVAL = 15 // seconds
         private const val SCALE_REDUCTION_PER_INTERVAL = 0.1f
         private const val MIN_COIN_SCALE = 0.5f
@@ -94,21 +93,8 @@ class GameEngine(
             coins = updatedCoins
         )
 
-        // Schedule delayed respawn for Hapoalim coins (1 second)
-        if (coin.type == CoinType.BANK_HAPOALIM) {
-            coroutineScope.launch {
-                delay(HAPOALIM_RESPAWN_DELAY_MS)
-                val state = _state.value as? GameState.Running ?: return@launch
-                val elapsedTime = GAME_DURATION_SECONDS - state.timeRemaining
-                val currentScale = calculateScale(elapsedTime)
-                val newCoin = Coin.createRandom(currentScale).copy(type = CoinType.BANK_HAPOALIM)
-
-                _state.value = state.copy(
-                    coins = state.coins + newCoin
-                )
-            }
-        }
-        // Penalty coins respawn is handled by coinMaintenance
+        // All coin respawning is handled by coinMaintenance
+        // This ensures we always maintain minimum counts (4 Hapoalim, 3 penalty)
 
         // Trigger feedback (haptic + sound)
         onCoinCollected()
@@ -165,7 +151,8 @@ class GameEngine(
 
     /**
      * Maintains minimum coin counts on screen.
-     * Checks every 500ms and spawns coins if below minimum (4 Hapoalim, 3 penalty).
+     * Checks every 200ms and spawns coins if below minimum (4 Hapoalim, 3 penalty).
+     * Fast response ensures coins are always available for gameplay.
      */
     private fun startCoinMaintenance() {
         coinMaintenanceJob?.cancel()
