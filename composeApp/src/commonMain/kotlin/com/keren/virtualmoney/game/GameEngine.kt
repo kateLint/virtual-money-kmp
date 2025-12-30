@@ -46,18 +46,24 @@ class GameEngine(
         if (_state.value !is GameState.Ready) return
 
         // Start with exactly 4 Hapoalim coins + 3 penalty coins (random other banks)
-        val initialHapoalimCoins = List(MIN_HAPOALIM_COIN_COUNT) {
-            Coin.createRandom().copy(type = CoinType.BANK_HAPOALIM)
-        }
+        // Use 3D positioning with mixed distances for AR mode
+        val initialHapoalimCoins = listOf(
+            Coin.createRandom3D(0.5f, 1.5f).copy(type = CoinType.BANK_HAPOALIM),  // close
+            Coin.createRandom3D(0.5f, 1.5f).copy(type = CoinType.BANK_HAPOALIM),  // close
+            Coin.createRandom3D(1.5f, 2.5f).copy(type = CoinType.BANK_HAPOALIM),  // medium
+            Coin.createRandom3D(2.5f, 3.5f).copy(type = CoinType.BANK_HAPOALIM)   // far
+        )
 
         val penaltyBankTypes = listOf(
             CoinType.BANK_LEUMI,
             CoinType.BANK_MIZRAHI,
             CoinType.BANK_DISCOUNT
         )
-        val initialPenaltyCoins = List(MIN_PENALTY_COIN_COUNT) {
-            Coin.createRandom().copy(type = penaltyBankTypes.random())
-        }
+        val initialPenaltyCoins = listOf(
+            Coin.createRandom3D(0.5f, 1.5f).copy(type = penaltyBankTypes.random()),  // close
+            Coin.createRandom3D(1.5f, 2.5f).copy(type = penaltyBankTypes.random()),  // medium
+            Coin.createRandom3D(2.5f, 3.5f).copy(type = penaltyBankTypes.random())   // far
+        )
 
         _state.value = GameState.Running(
             timeRemaining = GAME_DURATION_SECONDS,
@@ -172,7 +178,14 @@ class GameEngine(
                 // Spawn Hapoalim coins if below minimum
                 if (hapoalimCount < MIN_HAPOALIM_COIN_COUNT) {
                     repeat(MIN_HAPOALIM_COIN_COUNT - hapoalimCount) {
-                        newCoins = newCoins + Coin.createRandom(currentScale).copy(type = CoinType.BANK_HAPOALIM)
+                        // Use random distance range for variety in AR mode
+                        val distanceRange = listOf(
+                            Pair(0.5f, 1.5f),  // close
+                            Pair(1.5f, 2.5f),  // medium
+                            Pair(2.5f, 3.5f)   // far
+                        ).random()
+                        newCoins = newCoins + Coin.createRandom3D(distanceRange.first, distanceRange.second, currentScale)
+                            .copy(type = CoinType.BANK_HAPOALIM)
                     }
                 }
 
@@ -184,7 +197,14 @@ class GameEngine(
                         CoinType.BANK_DISCOUNT
                     )
                     repeat(MIN_PENALTY_COIN_COUNT - penaltyCount) {
-                        newCoins = newCoins + Coin.createRandom(currentScale).copy(type = penaltyBankTypes.random())
+                        // Use random distance range for variety in AR mode
+                        val distanceRange = listOf(
+                            Pair(0.5f, 1.5f),  // close
+                            Pair(1.5f, 2.5f),  // medium
+                            Pair(2.5f, 3.5f)   // far
+                        ).random()
+                        newCoins = newCoins + Coin.createRandom3D(distanceRange.first, distanceRange.second, currentScale)
+                            .copy(type = penaltyBankTypes.random())
                     }
                 }
 
