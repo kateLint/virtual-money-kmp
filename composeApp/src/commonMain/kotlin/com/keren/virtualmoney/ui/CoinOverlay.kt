@@ -1,6 +1,7 @@
 package com.keren.virtualmoney.ui
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -14,13 +15,17 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.keren.virtualmoney.game.Coin
+import com.keren.virtualmoney.game.CoinType
 import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.painterResource
+import virtualmoney.composeapp.generated.resources.*
 import kotlin.math.roundToInt
 
 /**
@@ -149,10 +154,30 @@ private fun AnimatedCoin(
             ),
         contentAlignment = Alignment.Center
     ) {
-        // Coin emoji - bank icons or black coin
-        Text(
-            text = com.keren.virtualmoney.game.Coin.getIcon(coin.type),
-            fontSize = (48 * coin.scale).sp
+        // Bank logo image
+        Image(
+            painter = painterResource(getBankLogoResource(coin.type)),
+            contentDescription = when (coin.type) {
+                CoinType.BANK_HAPOALIM -> "Bank Hapoalim"
+                CoinType.BANK_LEUMI -> "Bank Leumi"
+                CoinType.BANK_MIZRAHI -> "Bank Mizrahi"
+                CoinType.BANK_DISCOUNT -> "Bank Discount"
+            },
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Fit
         )
+    }
+}
+
+/**
+ * Returns the drawable resource for each bank logo.
+ */
+@Composable
+private fun getBankLogoResource(type: CoinType): org.jetbrains.compose.resources.DrawableResource {
+    return when (type) {
+        CoinType.BANK_HAPOALIM -> Res.drawable.bank_hapoalim
+        CoinType.BANK_LEUMI -> Res.drawable.bank_leumi
+        CoinType.BANK_MIZRAHI -> Res.drawable.bank_mizrahi
+        CoinType.BANK_DISCOUNT -> Res.drawable.bank_discount
     }
 }
