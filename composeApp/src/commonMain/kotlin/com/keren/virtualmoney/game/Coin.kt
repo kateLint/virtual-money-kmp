@@ -70,7 +70,18 @@ data class Coin(
         }
 
         /**
+         * Returns the emoji/icon for each coin type.
+         */
+        fun getIcon(type: CoinType): String = when (type) {
+            CoinType.BANK_HAPOALIM -> "🏛️"   // בנק הפועלים (good)
+            CoinType.BANK_LEUMI -> "🏦"      // בנק לאומי (penalty)
+            CoinType.BANK_MIZRAHI -> "💰"    // בנק מזרחי (penalty)
+            CoinType.BANK_DISCOUNT -> "💳"   // בנק דיסקונט (penalty)
+        }
+
+        /**
          * Returns the drawable resource name for each coin type.
+         * Use this when you want to switch from emojis to actual logo images.
          */
         fun getDrawableResource(type: CoinType): String = when (type) {
             CoinType.BANK_HAPOALIM -> "bank_hapoalim.xml"   // בנק הפועלים (good)
