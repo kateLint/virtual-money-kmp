@@ -34,6 +34,9 @@ kotlin {
             implementation("androidx.camera:camera-camera2:1.4.1")
             implementation("androidx.camera:camera-lifecycle:1.4.1")
             implementation("androidx.camera:camera-view:1.4.1")
+
+            // ARCore for augmented reality
+            implementation("com.google.ar:core:1.41.0")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
