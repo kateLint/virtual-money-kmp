@@ -1,5 +1,6 @@
 package com.keren.virtualmoney.game
 
+import com.keren.virtualmoney.ar.math.Vector3D
 import kotlin.random.Random
 
 /**
@@ -17,11 +18,12 @@ enum class CoinType {
  * Coordinates are normalized (0.0 to 1.0) to support any screen resolution.
  *
  * @param id Unique identifier for the coin (for tap detection)
- * @param x Horizontal position (0.0 = left edge, 1.0 = right edge)
- * @param y Vertical position (0.0 = top edge, 1.0 = bottom edge)
+ * @param x Horizontal position (0.0 = left edge, 1.0 = right edge) - DEPRECATED: Use position3D for AR mode
+ * @param y Vertical position (0.0 = top edge, 1.0 = bottom edge) - DEPRECATED: Use position3D for AR mode
  * @param scale Size multiplier (1.0 = normal size, smaller for increased difficulty)
  * @param type Type of coin (GOLD or BLACK)
  * @param spawnTime Timestamp when the coin was created (for auto-removal of black coins)
+ * @param position3D 3D position in AR space (null for 2D mode, set for AR mode)
  */
 data class Coin(
     val id: String,
@@ -29,7 +31,8 @@ data class Coin(
     val y: Float,
     val scale: Float = 1.0f,
     val type: CoinType = CoinType.BANK_HAPOALIM,
-    val spawnTime: Long = System.currentTimeMillis()
+    val spawnTime: Long = System.currentTimeMillis(),
+    val position3D: Vector3D? = null
 ) {
     companion object {
         private const val SAFE_MARGIN = 0.1f // 10% margin from edges
@@ -49,6 +52,54 @@ data class Coin(
                 y = Random.nextFloat() * (1.0f - 2 * SAFE_MARGIN) + SAFE_MARGIN,
                 scale = scale,
                 type = CoinType.BANK_HAPOALIM
+            )
+        }
+
+        /**
+         * Creates a random coin with 3D position in AR space.
+         * Distributes coins in a hemisphere in front of the camera.
+         *
+         * @param distanceRange Range of distances from camera (min to max in meters)
+         * @param scale Size multiplier (1.0 = normal size)
+         * @param type Type of coin to create
+         * @return Coin with 3D position set (x/y set to 0.5 as fallback for 2D rendering)
+         */
+        fun createRandom3D(
+            distanceRange: ClosedFloatingPointRange<Float> = 1.5f..4.0f,
+            scale: Float = 1.0f,
+            type: CoinType = CoinType.BANK_HAPOALIM
+        ): Coin {
+            // Generate spherical coordinates
+            val distance = Random.nextFloat() * (distanceRange.endInclusive - distanceRange.start) + distanceRange.start
+
+            // Azimuth: -60° to +60° (120° horizontal field)
+            val azimuthDegrees = Random.nextFloat() * 120f - 60f
+            val azimuthRadians = Math.toRadians(azimuthDegrees.toDouble()).toFloat()
+
+            // Elevation: Height distribution
+            // 50% at eye level (-10° to +10°)
+            // 30% higher (+10° to +30°)
+            // 20% lower (-30° to -10°)
+            val elevationDegrees = when (Random.nextFloat()) {
+                in 0.0f..0.5f -> Random.nextFloat() * 20f - 10f  // Eye level
+                in 0.5f..0.8f -> Random.nextFloat() * 20f + 10f  // Higher
+                else -> Random.nextFloat() * 20f - 30f           // Lower
+            }
+            val elevationRadians = Math.toRadians(elevationDegrees.toDouble()).toFloat()
+
+            // Convert spherical to Cartesian coordinates
+            // Camera space: +X = right, +Y = up, -Z = forward
+            val x = distance * kotlin.math.sin(azimuthRadians) * kotlin.math.cos(elevationRadians)
+            val y = distance * kotlin.math.sin(elevationRadians)
+            val z = -distance * kotlin.math.cos(azimuthRadians) * kotlin.math.cos(elevationRadians)
+
+            return Coin(
+                id = generateId(),
+                x = 0.5f,  // Center screen as 2D fallback
+                y = 0.5f,  // Center screen as 2D fallback
+                scale = scale,
+                type = type,
+                position3D = Vector3D(x, y, z)
             )
         }
 
