@@ -75,7 +75,7 @@ fun CoinOverlay(
  * Single animated coin with rotation and pulse effects.
  */
 @Composable
-private fun AnimatedCoin(
+internal fun AnimatedCoin(
     coin: Coin,
     onTap: () -> Unit
 ) {
@@ -89,8 +89,8 @@ private fun AnimatedCoin(
     }
 
     val coinAge = currentTime - coin.spawnTime
-    val isExpiring = com.keren.virtualmoney.game.Coin.isPenaltyCoin(coin.type) &&
-            coinAge > (com.keren.virtualmoney.game.Coin.PENALTY_COIN_LIFETIME_MS - 500)
+    val isExpiring = Coin.isPenaltyCoin(coin.type) &&
+            coinAge > (Coin.PENALTY_COIN_LIFETIME_MS - 500)
 
     // Continuous rotation animation
     val infiniteTransition = rememberInfiniteTransition()
@@ -109,7 +109,7 @@ private fun AnimatedCoin(
         targetValue = 1.1f,
         animationSpec = infiniteRepeatable(
             animation = tween(
-                durationMillis = if (com.keren.virtualmoney.game.Coin.isPenaltyCoin(coin.type)) 500 else 1000,
+                durationMillis = if (Coin.isPenaltyCoin(coin.type)) 500 else 1000,
                 easing = FastOutSlowInEasing
             ),
             repeatMode = RepeatMode.Reverse
@@ -129,7 +129,7 @@ private fun AnimatedCoin(
 
     // Calculate alpha for expiring penalty coins
     val expiringAlpha = if (isExpiring) {
-        val timeLeft = com.keren.virtualmoney.game.Coin.PENALTY_COIN_LIFETIME_MS - coinAge
+        val timeLeft = Coin.PENALTY_COIN_LIFETIME_MS - coinAge
         (timeLeft / 500f).coerceIn(0f, 1f)
     } else {
         1f
@@ -173,7 +173,7 @@ private fun AnimatedCoin(
  * Returns the drawable resource for each bank logo.
  */
 @Composable
-private fun getBankLogoResource(type: CoinType): org.jetbrains.compose.resources.DrawableResource {
+internal fun getBankLogoResource(type: CoinType): org.jetbrains.compose.resources.DrawableResource {
     return when (type) {
         CoinType.BANK_HAPOALIM -> Res.drawable.bank_hapoalim
         CoinType.BANK_LEUMI -> Res.drawable.bank_leumi

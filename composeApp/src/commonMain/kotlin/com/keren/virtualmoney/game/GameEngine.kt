@@ -48,10 +48,10 @@ class GameEngine(
         // Start with exactly 4 Hapoalim coins + 3 penalty coins (random other banks)
         // Use 3D positioning with mixed distances for AR mode
         val initialHapoalimCoins = listOf(
-            Coin.createRandom3D(0.5f, 1.5f).copy(type = CoinType.BANK_HAPOALIM),  // close
-            Coin.createRandom3D(0.5f, 1.5f).copy(type = CoinType.BANK_HAPOALIM),  // close
-            Coin.createRandom3D(1.5f, 2.5f).copy(type = CoinType.BANK_HAPOALIM),  // medium
-            Coin.createRandom3D(2.5f, 3.5f).copy(type = CoinType.BANK_HAPOALIM)   // far
+            Coin.createRandom3D(distanceRange = 0.5f..1.5f, type = CoinType.BANK_HAPOALIM),  // close
+            Coin.createRandom3D(distanceRange = 0.5f..1.5f, type = CoinType.BANK_HAPOALIM),  // close
+            Coin.createRandom3D(distanceRange = 1.5f..2.5f, type = CoinType.BANK_HAPOALIM),  // medium
+            Coin.createRandom3D(distanceRange = 2.5f..3.5f, type = CoinType.BANK_HAPOALIM)   // far
         )
 
         val penaltyBankTypes = listOf(
@@ -60,9 +60,9 @@ class GameEngine(
             CoinType.BANK_DISCOUNT
         )
         val initialPenaltyCoins = listOf(
-            Coin.createRandom3D(0.5f, 1.5f).copy(type = penaltyBankTypes.random()),  // close
-            Coin.createRandom3D(1.5f, 2.5f).copy(type = penaltyBankTypes.random()),  // medium
-            Coin.createRandom3D(2.5f, 3.5f).copy(type = penaltyBankTypes.random())   // far
+            Coin.createRandom3D(distanceRange = 0.5f..1.5f, type = penaltyBankTypes.random()),  // close
+            Coin.createRandom3D(distanceRange = 1.5f..2.5f, type = penaltyBankTypes.random()),  // medium
+            Coin.createRandom3D(distanceRange = 2.5f..3.5f, type = penaltyBankTypes.random())   // far
         )
 
         _state.value = GameState.Running(
@@ -180,12 +180,11 @@ class GameEngine(
                     repeat(MIN_HAPOALIM_COIN_COUNT - hapoalimCount) {
                         // Use random distance range for variety in AR mode
                         val distanceRange = listOf(
-                            Pair(0.5f, 1.5f),  // close
-                            Pair(1.5f, 2.5f),  // medium
-                            Pair(2.5f, 3.5f)   // far
+                            0.5f..1.5f,  // close
+                            1.5f..2.5f,  // medium
+                            2.5f..3.5f   // far
                         ).random()
-                        newCoins = newCoins + Coin.createRandom3D(distanceRange.first, distanceRange.second, currentScale)
-                            .copy(type = CoinType.BANK_HAPOALIM)
+                        newCoins = newCoins + Coin.createRandom3D(distanceRange = distanceRange, scale = currentScale, type = CoinType.BANK_HAPOALIM)
                     }
                 }
 
@@ -199,12 +198,11 @@ class GameEngine(
                     repeat(MIN_PENALTY_COIN_COUNT - penaltyCount) {
                         // Use random distance range for variety in AR mode
                         val distanceRange = listOf(
-                            Pair(0.5f, 1.5f),  // close
-                            Pair(1.5f, 2.5f),  // medium
-                            Pair(2.5f, 3.5f)   // far
+                            0.5f..1.5f,  // close
+                            1.5f..2.5f,  // medium
+                            2.5f..3.5f   // far
                         ).random()
-                        newCoins = newCoins + Coin.createRandom3D(distanceRange.first, distanceRange.second, currentScale)
-                            .copy(type = penaltyBankTypes.random())
+                        newCoins = newCoins + Coin.createRandom3D(distanceRange = distanceRange, scale = currentScale, type = penaltyBankTypes.random())
                     }
                 }
 
