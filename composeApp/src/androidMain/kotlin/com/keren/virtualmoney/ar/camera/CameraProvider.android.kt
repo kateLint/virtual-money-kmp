@@ -7,6 +7,8 @@ import com.google.ar.core.Config
 import com.google.ar.core.Session
 import com.google.ar.core.exceptions.UnavailableException
 import com.keren.virtualmoney.ar.data.Pose
+import com.keren.virtualmoney.ar.math.Quaternion
+import com.keren.virtualmoney.ar.math.Vector3D
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,7 +25,7 @@ import kotlinx.coroutines.flow.asStateFlow
 actual class CameraProvider(private val context: Context) {
 
     private var arSession: Session? = null
-    // private var sensorPoseTracker: SensorPoseTracker? = null // Will be implemented in Task 9
+    private var sensorPoseTracker: SensorPoseTracker? = null
     private var isUsingAR = false
 
     private val _poseFlow = MutableStateFlow(Pose())
@@ -74,9 +76,8 @@ actual class CameraProvider(private val context: Context) {
             arSession?.close()
             arSession = null
 
-            // TODO: Task 9 - Stop sensor tracking
-            // sensorPoseTracker?.stop()
-            // sensorPoseTracker = null
+            sensorPoseTracker?.stop()
+            sensorPoseTracker = null
 
             isUsingAR = false
             Log.i(TAG, "Tracking session stopped")
@@ -113,16 +114,16 @@ actual class CameraProvider(private val context: Context) {
             // Convert ARCore pose to our Pose representation
             // ARCore uses: translation (tx, ty, tz) and quaternion (qx, qy, qz, qw)
             val pose = Pose(
-                position = floatArrayOf(
+                position = Vector3D(
                     cameraPose.tx(),
                     cameraPose.ty(),
                     cameraPose.tz()
                 ),
-                orientation = floatArrayOf(
-                    cameraPose.qx(),
-                    cameraPose.qy(),
-                    cameraPose.qz(),
-                    cameraPose.qw()
+                rotation = Quaternion(
+                    w = cameraPose.qw(),
+                    x = cameraPose.qx(),
+                    y = cameraPose.qy(),
+                    z = cameraPose.qz()
                 )
             )
 
@@ -134,11 +135,13 @@ actual class CameraProvider(private val context: Context) {
 
     /**
      * Update pose from sensor-based tracking.
+     * Note: With SensorPoseTracker, pose updates are pushed via callback,
+     * so this method doesn't need to do anything. The callback directly
+     * updates the pose flow.
      */
     private fun updatePoseFromSensors() {
-        // TODO: Task 9 - Implement sensor pose updates
-        // val pose = sensorPoseTracker?.getCurrentPose() ?: Pose()
-        // _poseFlow.value = pose
+        // Sensor updates are handled via the onPoseUpdate callback
+        // in SensorPoseTracker, which directly updates _poseFlow
     }
 
     /**
@@ -167,9 +170,11 @@ actual class CameraProvider(private val context: Context) {
      * Fall back to sensor-based tracking when ARCore is unavailable.
      */
     private fun fallbackToSensors() {
-        // TODO: Task 9 - Initialize sensor-based tracking
-        // sensorPoseTracker = SensorPoseTracker(context)
-        // sensorPoseTracker?.start()
+        sensorPoseTracker = SensorPoseTracker(context) { pose ->
+            // Update pose flow when sensor data changes
+            _poseFlow.value = pose
+        }
+        sensorPoseTracker?.start()
         isUsingAR = false
         Log.i(TAG, "Using sensor-based tracking fallback")
     }
