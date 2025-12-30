@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.keren.virtualmoney.ar.camera.CameraProvider
 import com.keren.virtualmoney.game.GameEngine
 import com.keren.virtualmoney.game.GameState
 
@@ -27,24 +28,45 @@ import com.keren.virtualmoney.game.GameState
  * Main game screen that displays different states based on the game FSM.
  * @param gameEngine The game engine managing state
  * @param cameraBackground Composable that renders the camera feed
+ * @param cameraProvider CameraProvider for AR mode
+ * @param isARMode Whether AR mode is enabled
+ * @param onToggleARMode Callback to toggle AR mode
  */
 @Composable
 fun GameScreen(
     gameEngine: GameEngine,
-    cameraBackground: @Composable () -> Unit
+    cameraBackground: @Composable () -> Unit,
+    cameraProvider: CameraProvider,
+    isARMode: Boolean,
+    onToggleARMode: () -> Unit
 ) {
     val gameState by gameEngine.state.collectAsState()
 
     Box(modifier = Modifier.fillMaxSize()) {
         when (val state = gameState) {
             is GameState.Ready -> ReadyScreen(
-                onStartGame = { gameEngine.startGame() }
+                onStartGame = { gameEngine.startGame() },
+                isARMode = isARMode,
+                onToggleARMode = onToggleARMode
             )
-            is GameState.Running -> RunningScreen(
-                state = state,
-                cameraBackground = cameraBackground,
-                onCoinTapped = { coinId -> gameEngine.collectCoin(coinId) }
-            )
+            is GameState.Running -> {
+                if (isARMode) {
+                    // AR Mode - use ARGameScreen
+                    ARGameScreen(
+                        gameState = state,
+                        cameraProvider = cameraProvider,
+                        onCoinTapped = { coinId -> gameEngine.collectCoin(coinId) },
+                        onPause = { gameEngine.resetGame() }
+                    )
+                } else {
+                    // 2D Mode - use original RunningScreen
+                    RunningScreen(
+                        state = state,
+                        cameraBackground = cameraBackground,
+                        onCoinTapped = { coinId -> gameEngine.collectCoin(coinId) }
+                    )
+                }
+            }
             is GameState.Finished -> FinishedScreen(
                 state = state,
                 onTryAgain = { gameEngine.resetGame() }
@@ -57,7 +79,11 @@ fun GameScreen(
  * Ready state - shows start button and high score.
  */
 @Composable
-private fun ReadyScreen(onStartGame: () -> Unit) {
+private fun ReadyScreen(
+    onStartGame: () -> Unit,
+    isARMode: Boolean,
+    onToggleARMode: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -67,13 +93,40 @@ private fun ReadyScreen(onStartGame: () -> Unit) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "💰 Coin Hunter",
+            text = "Coin Hunter",
             fontSize = 48.sp,
             fontWeight = FontWeight.Bold,
             color = Color(0xFFFFD700) // Gold
         )
 
         Spacer(modifier = Modifier.height(48.dp))
+
+        // AR/2D Mode Toggle
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Button(
+                onClick = { onToggleARMode() },
+                modifier = Modifier.width(120.dp),
+                enabled = !isARMode
+            ) {
+                Text("2D Mode")
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Button(
+                onClick = { onToggleARMode() },
+                modifier = Modifier.width(120.dp),
+                enabled = isARMode
+            ) {
+                Text("AR Mode")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = onStartGame,
@@ -86,7 +139,11 @@ private fun ReadyScreen(onStartGame: () -> Unit) {
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "Tap coins to collect them!\n60 seconds to get the highest score.",
+            text = if (isARMode) {
+                "Move your phone to look around!\nTap coins to collect them.\n60 seconds to get the highest score."
+            } else {
+                "Tap coins to collect them!\n60 seconds to get the highest score."
+            },
             fontSize = 16.sp,
             color = Color.Gray,
             modifier = Modifier.padding(horizontal = 16.dp)

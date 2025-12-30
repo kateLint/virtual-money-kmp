@@ -42,10 +42,11 @@ fun ARGameScreen(
     // Collect camera pose
     val cameraPose by cameraProvider.poseFlow.collectAsState()
 
-    // 60 FPS update loop - trigger recomposition
+    // 60 FPS update loop - trigger recomposition and update pose
     var frameCount by remember { mutableStateOf(0) }
     LaunchedEffect(Unit) {
         while (isActive) {
+            cameraProvider.updatePose() // Update pose from AR/sensors
             delay(16) // ~60 FPS
             frameCount++
         }
