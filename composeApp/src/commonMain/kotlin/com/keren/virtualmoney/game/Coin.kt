@@ -1,7 +1,11 @@
 package com.keren.virtualmoney.game
 
 import com.keren.virtualmoney.ar.math.Vector3D
+import com.keren.virtualmoney.platform.getCurrentTimeMillis
 import kotlin.random.Random
+import kotlin.math.PI
+import kotlin.math.sin
+import kotlin.math.cos
 
 /**
  * Types of coins in the game.
@@ -31,7 +35,7 @@ data class Coin(
     val y: Float,
     val scale: Float = 1.0f,
     val type: CoinType = CoinType.BANK_HAPOALIM,
-    val spawnTime: Long = System.currentTimeMillis(),
+    val spawnTime: Long = getCurrentTimeMillis(),
     val position3D: Vector3D? = null
 ) {
     companion object {
@@ -74,7 +78,7 @@ data class Coin(
 
             // Azimuth: -60° to +60° (120° horizontal field)
             val azimuthDegrees = Random.nextFloat() * 120f - 60f
-            val azimuthRadians = Math.toRadians(azimuthDegrees.toDouble()).toFloat()
+            val azimuthRadians = (azimuthDegrees * PI / 180.0).toFloat()
 
             // Elevation: Height distribution
             // 50% at eye level (-10° to +10°)
@@ -85,13 +89,13 @@ data class Coin(
                 in 0.5f..0.8f -> Random.nextFloat() * 20f + 10f  // Higher
                 else -> Random.nextFloat() * 20f - 30f           // Lower
             }
-            val elevationRadians = Math.toRadians(elevationDegrees.toDouble()).toFloat()
+            val elevationRadians = (elevationDegrees * PI / 180.0).toFloat()
 
             // Convert spherical to Cartesian coordinates
             // Camera space: +X = right, +Y = up, -Z = forward
-            val x = distance * kotlin.math.sin(azimuthRadians) * kotlin.math.cos(elevationRadians)
-            val y = distance * kotlin.math.sin(elevationRadians)
-            val z = -distance * kotlin.math.cos(azimuthRadians) * kotlin.math.cos(elevationRadians)
+            val x = distance * sin(azimuthRadians) * cos(elevationRadians)
+            val y = distance * sin(elevationRadians)
+            val z = -distance * cos(azimuthRadians) * cos(elevationRadians)
 
             return Coin(
                 id = generateId(),
@@ -107,7 +111,7 @@ data class Coin(
          * Generates a unique ID for coin tracking.
          */
         private fun generateId(): String {
-            return "coin_${System.currentTimeMillis()}_${Random.nextInt()}"
+            return "coin_${getCurrentTimeMillis()}_${Random.nextInt()}"
         }
 
         /**

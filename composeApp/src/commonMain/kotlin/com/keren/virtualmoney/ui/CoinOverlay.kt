@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
+import com.keren.virtualmoney.platform.getCurrentTimeMillis
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -80,11 +81,11 @@ internal fun AnimatedCoin(
     onTap: () -> Unit
 ) {
     // Track age of coin for black coin fade-out
-    var currentTime by remember { mutableStateOf(System.currentTimeMillis()) }
+    var currentTime by remember { mutableStateOf(getCurrentTimeMillis()) }
     LaunchedEffect(Unit) {
         while (true) {
             delay(50)
-            currentTime = System.currentTimeMillis()
+            currentTime = getCurrentTimeMillis()
         }
     }
 
@@ -130,7 +131,7 @@ internal fun AnimatedCoin(
     // Calculate alpha for expiring penalty coins
     val expiringAlpha = if (isExpiring) {
         val timeLeft = Coin.PENALTY_COIN_LIFETIME_MS - coinAge
-        (timeLeft / 500f).coerceIn(0f, 1f)
+        (timeLeft.toFloat() / 500f).coerceIn(0f, 1f)
     } else {
         1f
     }

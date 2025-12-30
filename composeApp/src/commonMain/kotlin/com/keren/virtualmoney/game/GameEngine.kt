@@ -1,5 +1,6 @@
 package com.keren.virtualmoney.game
 
+import com.keren.virtualmoney.platform.getCurrentTimeMillis
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -223,7 +224,7 @@ class GameEngine(
             while (true) {
                 delay(COIN_CLEANUP_INTERVAL_MS)
                 val currentState = _state.value as? GameState.Running ?: break
-                val currentTime = System.currentTimeMillis()
+                val currentTime = getCurrentTimeMillis()
 
                 // Filter out expired penalty coins
                 val validCoins = currentState.coins.filter { coin ->
