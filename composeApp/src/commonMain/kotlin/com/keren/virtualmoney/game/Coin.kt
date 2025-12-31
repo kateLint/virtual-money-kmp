@@ -76,19 +76,13 @@ data class Coin(
             // Generate spherical coordinates
             val distance = Random.nextFloat() * (distanceRange.endInclusive - distanceRange.start) + distanceRange.start
 
-            // Azimuth: -60° to +60° (120° horizontal field)
-            val azimuthDegrees = Random.nextFloat() * 120f - 60f
+            // Azimuth: -90° to +90° (180° horizontal field - full left to right)
+            val azimuthDegrees = Random.nextFloat() * 180f - 90f
             val azimuthRadians = (azimuthDegrees * PI / 180.0).toFloat()
 
-            // Elevation: Height distribution
-            // 50% at eye level (-10° to +10°)
-            // 30% higher (+10° to +30°)
-            // 20% lower (-30° to -10°)
-            val elevationDegrees = when (Random.nextFloat()) {
-                in 0.0f..0.5f -> Random.nextFloat() * 20f - 10f  // Eye level
-                in 0.5f..0.8f -> Random.nextFloat() * 20f + 10f  // Higher
-                else -> Random.nextFloat() * 20f - 30f           // Lower
-            }
+            // Elevation: Full vertical distribution
+            // Spread across full vertical range: -60° (down) to +60° (up)
+            val elevationDegrees = Random.nextFloat() * 120f - 60f
             val elevationRadians = (elevationDegrees * PI / 180.0).toFloat()
 
             // Convert spherical to Cartesian coordinates
