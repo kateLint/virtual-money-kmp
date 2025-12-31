@@ -47,12 +47,12 @@ class GameEngine(
         if (_state.value !is GameState.Ready) return
 
         // Start with exactly 4 Hapoalim coins + 3 penalty coins (random other banks)
-        // Use 3D positioning with mixed distances for AR mode
+        // Use 3D positioning VERY CLOSE for AR mode (0.3m - 1.5m)
         val initialHapoalimCoins = listOf(
-            Coin.createRandom3D(distanceRange = 0.5f..1.5f, type = CoinType.BANK_HAPOALIM),  // close
-            Coin.createRandom3D(distanceRange = 0.5f..1.5f, type = CoinType.BANK_HAPOALIM),  // close
-            Coin.createRandom3D(distanceRange = 1.5f..2.5f, type = CoinType.BANK_HAPOALIM),  // medium
-            Coin.createRandom3D(distanceRange = 2.5f..3.5f, type = CoinType.BANK_HAPOALIM)   // far
+            Coin.createRandom3D(distanceRange = 0.3f..0.6f, type = CoinType.BANK_HAPOALIM),  // very close
+            Coin.createRandom3D(distanceRange = 0.3f..0.6f, type = CoinType.BANK_HAPOALIM),  // very close
+            Coin.createRandom3D(distanceRange = 0.6f..1.0f, type = CoinType.BANK_HAPOALIM),  // close
+            Coin.createRandom3D(distanceRange = 1.0f..1.5f, type = CoinType.BANK_HAPOALIM)   // medium
         )
 
         val penaltyBankTypes = listOf(
@@ -61,9 +61,9 @@ class GameEngine(
             CoinType.BANK_DISCOUNT
         )
         val initialPenaltyCoins = listOf(
-            Coin.createRandom3D(distanceRange = 0.5f..1.5f, type = penaltyBankTypes.random()),  // close
-            Coin.createRandom3D(distanceRange = 1.5f..2.5f, type = penaltyBankTypes.random()),  // medium
-            Coin.createRandom3D(distanceRange = 2.5f..3.5f, type = penaltyBankTypes.random())   // far
+            Coin.createRandom3D(distanceRange = 0.3f..0.6f, type = penaltyBankTypes.random()),  // very close
+            Coin.createRandom3D(distanceRange = 0.6f..1.0f, type = penaltyBankTypes.random()),  // close
+            Coin.createRandom3D(distanceRange = 1.0f..1.5f, type = penaltyBankTypes.random())   // medium
         )
 
         _state.value = GameState.Running(
@@ -179,11 +179,11 @@ class GameEngine(
                 // Spawn Hapoalim coins if below minimum
                 if (hapoalimCount < MIN_HAPOALIM_COIN_COUNT) {
                     repeat(MIN_HAPOALIM_COIN_COUNT - hapoalimCount) {
-                        // Use random distance range for variety in AR mode
+                        // Use random distance range VERY CLOSE for AR mode (0.3m - 1.5m)
                         val distanceRange = listOf(
-                            0.5f..1.5f,  // close
-                            1.5f..2.5f,  // medium
-                            2.5f..3.5f   // far
+                            0.3f..0.6f,  // very close
+                            0.6f..1.0f,  // close
+                            1.0f..1.5f   // medium
                         ).random()
                         newCoins = newCoins + Coin.createRandom3D(distanceRange = distanceRange, scale = currentScale, type = CoinType.BANK_HAPOALIM)
                     }
@@ -197,11 +197,11 @@ class GameEngine(
                         CoinType.BANK_DISCOUNT
                     )
                     repeat(MIN_PENALTY_COIN_COUNT - penaltyCount) {
-                        // Use random distance range for variety in AR mode
+                        // Use random distance range VERY CLOSE for AR mode (0.3m - 1.5m)
                         val distanceRange = listOf(
-                            0.5f..1.5f,  // close
-                            1.5f..2.5f,  // medium
-                            2.5f..3.5f   // far
+                            0.3f..0.6f,  // very close
+                            0.6f..1.0f,  // close
+                            1.0f..1.5f   // medium
                         ).random()
                         newCoins = newCoins + Coin.createRandom3D(distanceRange = distanceRange, scale = currentScale, type = penaltyBankTypes.random())
                     }

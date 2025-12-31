@@ -70,19 +70,17 @@ fun ARGameScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Camera background (black placeholder for now)
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-        ) {
-            // Measure screen size
-            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-                screenSize = IntSize(
-                    width = with(density) { maxWidth.toPx().toInt() },
-                    height = with(density) { maxHeight.toPx().toInt() }
-                )
-            }
+        // Real camera preview background
+        CameraPreview(
+            modifier = Modifier.fillMaxSize()
+        )
+
+        // Measure screen size
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            screenSize = IntSize(
+                width = with(density) { maxWidth.toPx().toInt() },
+                height = with(density) { maxHeight.toPx().toInt() }
+            )
         }
 
         // AR Coin Overlay (projected coins)
