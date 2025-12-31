@@ -104,19 +104,6 @@ internal fun AnimatedCoin(
         )
     )
 
-    // Pulse animation (scale in/out) - faster for penalty coins
-    val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 0.9f,
-        targetValue = 1.1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = if (Coin.isPenaltyCoin(coin.type)) 500 else 1000,
-                easing = FastOutSlowInEasing
-            ),
-            repeatMode = RepeatMode.Reverse
-        )
-    )
-
     // Collect animation (fade out + scale up when tapped)
     var isCollected by remember { mutableStateOf(false) }
     val collectAlpha by animateFloatAsState(
@@ -138,7 +125,7 @@ internal fun AnimatedCoin(
 
     Box(
         modifier = Modifier
-            .size((60.dp * coin.scale * pulseScale)) // Base size with difficulty scaling
+            .size(120.dp) // Fixed large size for all coins
             .graphicsLayer {
                 rotationZ = rotation
                 scaleX = collectScale * (if (isExpiring) (expiringAlpha + 0.5f) else 1f)
