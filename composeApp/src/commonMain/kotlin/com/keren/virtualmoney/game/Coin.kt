@@ -80,9 +80,15 @@ data class Coin(
             val azimuthDegrees = Random.nextFloat() * 180f - 90f
             val azimuthRadians = (azimuthDegrees * PI / 180.0).toFloat()
 
-            // Elevation: Full vertical distribution
-            // Spread across full vertical range: -60° (down) to +60° (up)
-            val elevationDegrees = Random.nextFloat() * 120f - 60f
+            // Elevation: Weighted distribution to ensure coins appear in all areas
+            // 33% above eye level (+20° to +60°)
+            // 33% at eye level (-20° to +20°)
+            // 33% below eye level (-60° to -20°)
+            val elevationDegrees = when {
+                Random.nextFloat() < 0.33f -> Random.nextFloat() * 40f + 20f  // Upper third
+                Random.nextFloat() < 0.67f -> Random.nextFloat() * 40f - 20f  // Middle third
+                else -> Random.nextFloat() * 40f - 60f                        // Lower third
+            }
             val elevationRadians = (elevationDegrees * PI / 180.0).toFloat()
 
             // Convert spherical to Cartesian coordinates
