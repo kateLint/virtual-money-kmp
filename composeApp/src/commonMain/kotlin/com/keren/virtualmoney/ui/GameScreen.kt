@@ -47,7 +47,8 @@ fun GameScreen(
             is GameState.Ready -> ReadyScreen(
                 onStartGame = { gameEngine.startGame() },
                 isARMode = isARMode,
-                onToggleARMode = onToggleARMode
+                onToggleARMode = onToggleARMode,
+                isARAvailable = cameraProvider.isARAvailable()
             )
             is GameState.Running -> {
                 if (isARMode) {
@@ -82,7 +83,8 @@ fun GameScreen(
 private fun ReadyScreen(
     onStartGame: () -> Unit,
     isARMode: Boolean,
-    onToggleARMode: () -> Unit
+    onToggleARMode: () -> Unit,
+    isARAvailable: Boolean
 ) {
     Column(
         modifier = Modifier
@@ -101,28 +103,39 @@ private fun ReadyScreen(
 
         Spacer(modifier = Modifier.height(48.dp))
 
-        // AR/2D Mode Toggle
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Button(
-                onClick = { onToggleARMode() },
-                modifier = Modifier.width(120.dp),
-                enabled = !isARMode
+        // AR/2D Mode Toggle - only show 2D button if AR is NOT available
+        if (isARAvailable) {
+            // AR is available - only show AR mode (no toggle needed)
+            Text(
+                text = "AR Mode Ready",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF4CAF50) // Green
+            )
+        } else {
+            // AR not available - show mode toggle
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("2D Mode")
-            }
+                Button(
+                    onClick = { onToggleARMode() },
+                    modifier = Modifier.width(120.dp),
+                    enabled = !isARMode
+                ) {
+                    Text("2D Mode")
+                }
 
-            Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(16.dp))
 
-            Button(
-                onClick = { onToggleARMode() },
-                modifier = Modifier.width(120.dp),
-                enabled = isARMode
-            ) {
-                Text("AR Mode")
+                Button(
+                    onClick = { onToggleARMode() },
+                    modifier = Modifier.width(120.dp),
+                    enabled = isARMode
+                ) {
+                    Text("Sensor Mode")
+                }
             }
         }
 
@@ -139,8 +152,10 @@ private fun ReadyScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = if (isARMode) {
+            text = if (isARAvailable) {
                 "Move your phone to look around!\nTap coins to collect them.\n60 seconds to get the highest score."
+            } else if (isARMode) {
+                "Move your phone with sensors!\nTap coins to collect them.\n60 seconds to get the highest score."
             } else {
                 "Tap coins to collect them!\n60 seconds to get the highest score."
             },
