@@ -60,8 +60,12 @@ actual fun CameraPreview(modifier: Modifier) {
         }, executor)
 
         onDispose {
-            val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-            cameraProviderFuture.get().unbindAll()
+            try {
+                val provider = ProcessCameraProvider.getInstance(context).get()
+                provider.unbindAll()
+            } catch (e: Exception) {
+                // Ignore cleanup errors
+            }
         }
     }
 

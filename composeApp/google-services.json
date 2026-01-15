@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "754173680414",
+    "firebase_url": "https://virtualmoney-a6cdb-default-rtdb.firebaseio.com",
+    "project_id": "virtualmoney-a6cdb",
+    "storage_bucket": "virtualmoney-a6cdb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:754173680414:android:34f1e515aceab941f9c70f",
+        "android_client_info": {
+          "package_name": "com.keren.virtualmoney"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD9z92MaMMZKdadPVgufH3dzSwc7b5bc3g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,5 +1,6 @@
 package com.keren.virtualmoney.platform
 
+import kotlinx.cinterop.ExperimentalForeignApi
 import platform.AVFAudio.AVAudioPlayer
 import platform.AVFAudio.AVAudioSession
 import platform.AVFAudio.AVAudioSessionCategoryPlayback
@@ -7,6 +8,7 @@ import platform.AVFAudio.setActive
 import platform.Foundation.NSBundle
 import platform.Foundation.NSURL
 
+@OptIn(ExperimentalForeignApi::class)
 private class IOSSoundPlayer : SoundPlayer {
     private var audioPlayer: AVAudioPlayer? = null
 

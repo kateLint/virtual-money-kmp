@@ -6,15 +6,17 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.googleServices)
 }
 
 kotlin {
     androidTarget {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
-    
+
     listOf(
         iosArm64(),
         iosSimulatorArm64()
@@ -22,9 +24,13 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = "ComposeApp"
             isStatic = true
+            // Export Firebase for iOS
+            export(libs.firebase.auth)
+            export(libs.firebase.firestore)
+            export(libs.firebase.database)
         }
     }
-    
+
     sourceSets {
         androidMain.dependencies {
             implementation(compose.preview)
@@ -34,14 +40,27 @@ kotlin {
             implementation("androidx.camera:camera-camera2:1.4.1")
             implementation("androidx.camera:camera-lifecycle:1.4.1")
             implementation("androidx.camera:camera-view:1.4.1")
+            implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0")
+            implementation("com.google.guava:guava:32.1.3-android")
 
             // ARCore for augmented reality
             implementation("com.google.ar:core:1.41.0")
+
+            // Ktor Android engine
+            implementation(libs.ktor.client.okhttp)
         }
+
+        iosMain.dependencies {
+            // Ktor iOS engine
+            implementation(libs.ktor.client.darwin)
+        }
+
         commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)
+            implementation(compose.material)
             implementation(compose.material3)
+            implementation(compose.materialIconsExtended)
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
@@ -50,7 +69,27 @@ kotlin {
 
             // Coroutines for async operations
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+
+            // Firebase KMP
+            api(libs.firebase.auth)
+            api(libs.firebase.firestore)
+            api(libs.firebase.database)
+            implementation(libs.firebase.common)
+
+            // Ktor for networking
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.json)
+
+            // Kotlinx
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.datetime)
+
+            // Settings storage
+            implementation(libs.multiplatform.settings)
+            implementation(libs.multiplatform.settings.noarg)
         }
+
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
@@ -66,7 +105,7 @@ android {
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
-        versionName = "1.0"
+        versionName = "2.0"
     }
     packaging {
         resources {
@@ -79,12 +118,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 
 dependencies {
     debugImplementation(compose.uiTooling)
 }
-
