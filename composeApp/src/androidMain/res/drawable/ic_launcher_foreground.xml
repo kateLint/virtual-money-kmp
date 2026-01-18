@@ -5,63 +5,112 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Background gradient circle -->
-    <group>
-        <clip-path android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0"/>
-        <path
-            android:fillColor="#1A1A2E"
-            android:pathData="M0,0h108v108H0z"/>
-        <path
-            android:fillColor="#16213E"
-            android:pathData="M0,36h108v72H0z"/>
-        <path
-            android:fillColor="#0F3460"
-            android:pathData="M0,72h108v36H0z"/>
-    </group>
+    <!-- AR Grid Background Effect -->
+    <path
+        android:fillColor="#00D9FF"
+        android:fillAlpha="0.1"
+        android:pathData="M0,0 L108,0 L108,108 L0,108 Z"/>
+    
+    <!-- Gradient Background Layers -->
+    <path
+        android:fillColor="#1A1A2E"
+        android:pathData="M0,0h108v108H0z"/>
+    <path
+        android:fillColor="#16213E"
+        android:pathData="M0,36h108v72H0z"/>
+    <path
+        android:fillColor="#0F3460"
+        android:pathData="M0,72h108v36H0z"/>
 
-    <!-- Outer coin ring -->
+    <!-- AR Glow Ring (Cyan) -->
+    <path
+        android:strokeColor="#00D9FF"
+        android:strokeAlpha="0.4"
+        android:strokeWidth="2"
+        android:fillColor="#00000000"
+        android:pathData="M54,54m-38,0a38,38 0,1 1,76 0a38,38 0,1 1,-76 0"/>
+    
+    <!-- Outer Golden Ring -->
     <path
         android:fillColor="#FFD700"
-        android:pathData="M54,54m-32,0a32,32 0,1 1,64 0a32,32 0,1 1,-64 0"
-        android:strokeWidth="0"/>
+        android:pathData="M54,54m-34,0a34,34 0,1 1,68 0a34,34 0,1 1,-68 0"/>
 
-    <!-- Inner coin circle -->
+    <!-- Inner Coin Surface - Gradient effect -->
     <path
-        android:fillColor="#FFA000"
-        android:pathData="M54,54m-28,0a28,28 0,1 1,56 0a28,28 0,1 1,-56 0"/>
+        android:fillColor="#FFAA00"
+        android:pathData="M54,54m-30,0a30,30 0,1 1,60 0a30,30 0,1 1,-60 0"/>
 
-    <!-- Coin highlight -->
+    <!-- Coin Center - Dark Orange -->
     <path
-        android:fillColor="#FFECB3"
-        android:fillAlpha="0.4"
-        android:pathData="M54,30 Q70,30 74,46 Q70,30 54,30z"/>
+        android:fillColor="#FF8C00"
+        android:pathData="M54,54m-26,0a26,26 0,1 1,52 0a26,26 0,1 1,-52 0"/>
 
-    <!-- Dollar/Shekel symbol stylized as coin emblem -->
+    <!-- Shine/Highlight on coin -->
     <path
-        android:fillColor="#B8860B"
-        android:pathData="M54,38 L54,70 M46,44 Q46,38 54,38 Q62,38 62,44 Q62,50 54,50 Q46,50 46,56 Q46,64 54,64 Q62,64 62,56"
-        android:strokeWidth="4"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.5"
+        android:pathData="M54,28 Q66,28 70,38 Q66,28 54,28 Z"/>
+
+    <!-- Israeli Shekel Symbol ₪ - Main -->
+    <!-- Vertical line -->
+    <path
         android:strokeColor="#B8860B"
-        android:strokeLineCap="round"/>
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:pathData="M54,36 L54,72"/>
+    
+    <!-- Top S curve -->
+    <path
+        android:strokeColor="#B8860B"
+        android:fillColor="#00000000"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:pathData="M44,42 Q44,36 54,36 Q64,36 64,42 Q64,48 54,48"/>
+    
+    <!-- Bottom S curve (reversed) -->
+    <path
+        android:strokeColor="#B8860B"
+        android:fillColor="#00000000"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:pathData="M54,60 Q44,60 44,66 Q44,72 54,72 Q64,72 64,66"/>
 
-    <!-- Sparkle effects -->
+    <!-- Sparkle Effects - Enhanced -->
+    <!-- Top right sparkle -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M78,32 L80,30 L82,32 L80,34 Z"/>
+        android:pathData="M78,30 L80,28 L82,30 L80,32 Z"/>
     <path
-        android:fillColor="#FFFFFF"
+        android:fillColor="#00D9FF"
         android:fillAlpha="0.8"
-        android:pathData="M28,68 L30,66 L32,68 L30,70 Z"/>
+        android:pathData="M76,34 L77,33 L78,34 L77,35 Z"/>
+    
+    <!-- Left sparkle -->
     <path
         android:fillColor="#FFFFFF"
-        android:fillAlpha="0.6"
-        android:pathData="M82,58 L83,57 L84,58 L83,59 Z"/>
-
-    <!-- "VM" letters subtly integrated -->
+        android:fillAlpha="0.9"
+        android:pathData="M26,66 L28,64 L30,66 L28,68 Z"/>
+    
+    <!-- Bottom right sparkle -->
     <path
-        android:fillColor="#FFD700"
-        android:fillAlpha="0.3"
-        android:pathData="M36,76 L40,84 L44,76 M48,76 L48,84 L52,80 L56,84 L56,76"
-        android:strokeWidth="1.5"
-        android:strokeColor="#FFD700"/>
+        android:fillColor="#00D9FF"
+        android:fillAlpha="0.6"
+        android:pathData="M82,76 L83.5,74.5 L85,76 L83.5,77.5 Z"/>
+
+    <!-- Small accent sparkles -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.5"
+        android:pathData="M34,40 L35,39 L36,40 L35,41 Z"/>
+    <path
+        android:fillColor="#00D9FF"
+        android:fillAlpha="0.4"
+        android:pathData="M72,68 L73,67 L74,68 L73,69 Z"/>
+
+    <!-- AR Scan Lines (subtle) -->
+    <path
+        android:strokeColor="#00D9FF"
+        android:strokeAlpha="0.15"
+        android:strokeWidth="1"
+        android:pathData="M20,45 L88,45 M20,54 L88,54 M20,63 L88,63"/>
 </vector>

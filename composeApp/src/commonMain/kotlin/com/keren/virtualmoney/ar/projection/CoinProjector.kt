@@ -12,17 +12,14 @@ import kotlin.math.tan
 /**
  * Projects 3D coins onto a 2D screen using perspective projection.
  *
- * This class transforms world-space coin positions to screen-space coordinates
- * based on the camera's pose, implementing proper perspective projection with
- * field-of-view and distance-based scaling.
+ * This class transforms world-space coin positions to screen-space coordinates based on the
+ * camera's pose, implementing proper perspective projection with field-of-view and distance-based
+ * scaling.
  *
  * @property fov The camera's horizontal field of view in degrees
  * @property baseCoinSize The base coin size in meters (used for scaling)
  */
-class CoinProjector(
-    private val fov: Float = 60f,
-    private val baseCoinSize: Float = 0.15f
-) {
+class CoinProjector(private val fov: Float = 60f, private val baseCoinSize: Float = 0.15f) {
     /**
      * Projects a 3D coin to 2D screen coordinates.
      *
@@ -43,11 +40,7 @@ class CoinProjector(
      * @param screenSize The screen dimensions (width x height) in pixels
      * @return ProjectedCoin if visible, null if behind camera or off-screen
      */
-    fun project3DTo2D(
-        coin: Coin,
-        cameraPose: Pose,
-        screenSize: IntSize
-    ): ProjectedCoin? {
+    fun project3DTo2D(coin: Coin, cameraPose: Pose, screenSize: IntSize): ProjectedCoin? {
         // Ensure coin has 3D position
         val position3D = coin.position3D ?: return null
 
@@ -71,30 +64,33 @@ class CoinProjector(
         // Project to normalized device coordinates, then to screen space
         // Screen space: origin at top-left, +X right, +Y down
         val screenX = (cameraSpace.x / depth) * focalLength + (screenSize.width / 2f)
-        val screenY = -(cameraSpace.y / depth) * focalLength + (screenSize.height / 2f)  // Flip Y
+        val screenY = -(cameraSpace.y / depth) * focalLength + (screenSize.height / 2f) // Flip Y
 
         // Step 4: Cull coins outside screen bounds
-        if (screenX < 0 || screenX > screenSize.width || screenY < 0 || screenY > screenSize.height) {
+        if (screenX < 0 || screenX > screenSize.width || screenY < 0 || screenY > screenSize.height
+        ) {
             return null
         }
 
-        // Step 5: Calculate distance and apparent scale
-        val distance = sqrt(
-            cameraSpace.x * cameraSpace.x +
-            cameraSpace.y * cameraSpace.y +
-            cameraSpace.z * cameraSpace.z
-        )
+        // Step 5: Calculate distance (for sorting/effects only)
+        val distance =
+                sqrt(
+                        cameraSpace.x * cameraSpace.x +
+                                cameraSpace.y * cameraSpace.y +
+                                cameraSpace.z * cameraSpace.z
+                )
 
-        // Apparent scale decreases with distance (inverse relationship)
-        // At 1 meter, scale = 1.0; at 2 meters, scale = 0.5, etc.
-        val apparentScale = baseCoinSize / distance
+        // CONSTANT APPARENT SIZE: All coins appear the same size regardless of distance
+        // This improves readability and prevents tiny far coins
+        // The gameplay is about searching/turning, not squinting at distant objects
+        val apparentScale = 1.0f
 
         return ProjectedCoin(
-            coin = coin,
-            screenX = screenX,
-            screenY = screenY,
-            apparentScale = apparentScale,
-            distance = distance
+                coin = coin,
+                screenX = screenX,
+                screenY = screenY,
+                apparentScale = apparentScale,
+                distance = distance
         )
     }
 

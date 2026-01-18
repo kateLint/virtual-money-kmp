@@ -3,10 +3,11 @@ package com.keren.virtualmoney.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -20,8 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.keren.virtualmoney.backend.ServiceLocator
+import com.keren.virtualmoney.platform.getCurrentTimeMillis
 import com.keren.virtualmoney.progression.Challenge
-import com.keren.virtualmoney.progression.ChallengeType
 
 /**
  * Screen showing daily and weekly challenges.
@@ -33,6 +34,39 @@ fun ChallengesScreen(
 ) {
     val activeChallenges by ServiceLocator.progressionManager.activeChallenges.collectAsState()
     val challengeProgress by ServiceLocator.progressionManager.challengeProgress.collectAsState()
+    val scrollState = rememberScrollState()
+
+    // Calculate time remaining dynamically
+    val currentTime = remember { mutableStateOf(getCurrentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(60_000) // Update every minute
+            currentTime.value = getCurrentTimeMillis()
+        }
+    }
+
+    // Get default challenges if none are active
+    val dailyExpiresAt = remember {
+        val now = getCurrentTimeMillis()
+        val msPerDay = 24 * 60 * 60 * 1000L
+        ((now / msPerDay) + 1) * msPerDay // Next midnight
+    }
+    val weeklyExpiresAt = remember {
+        val now = getCurrentTimeMillis()
+        val msPerWeek = 7 * 24 * 60 * 60 * 1000L
+        ((now / msPerWeek) + 1) * msPerWeek // Next week reset
+    }
+
+    val defaultDailyChallenges = remember { Challenge.generateDailyChallenges(dailyExpiresAt) }
+    val defaultWeeklyChallenges = remember { Challenge.generateWeeklyChallenges(weeklyExpiresAt) }
+
+    // Use active challenges or defaults
+    val dailyChallenges = activeChallenges.filter { it.isDaily }.ifEmpty { defaultDailyChallenges }
+    val weeklyChallenges = activeChallenges.filter { !it.isDaily }.ifEmpty { defaultWeeklyChallenges }
+
+    // Calculate time remaining for display
+    val dailyTimeRemaining = dailyChallenges.firstOrNull()?.formattedTimeRemaining() ?: formatTimeRemaining(dailyExpiresAt - currentTime.value)
+    val weeklyTimeRemaining = weeklyChallenges.firstOrNull()?.formattedTimeRemaining() ?: formatTimeRemaining(weeklyExpiresAt - currentTime.value)
 
     Box(
         modifier = modifier
@@ -50,6 +84,7 @@ fun ChallengesScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(scrollState)
                 .padding(24.dp)
         ) {
             // Header
@@ -58,7 +93,7 @@ fun ChallengesScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
                     tint = Color.White,
                     modifier = Modifier
@@ -84,55 +119,24 @@ fun ChallengesScreen(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Resets in 8h 32m",
+                text = "Resets in $dailyTimeRemaining",
                 color = Color.White.copy(alpha = 0.6f),
                 fontSize = 12.sp
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            val dailyChallenges = activeChallenges.filter { it.isDaily }
-            if (dailyChallenges.isEmpty()) {
-                // Show placeholder daily challenges
+            dailyChallenges.forEach { challenge ->
+                val progress = challengeProgress[challenge.id] ?: 0
                 ChallengeCard(
-                    title = "Coin Collector",
-                    description = "Collect 100 coins",
-                    progress = 45,
-                    target = 100,
-                    reward = "50 XP",
-                    isCompleted = false
+                    title = challenge.title,
+                    description = challenge.description,
+                    progress = progress,
+                    target = challenge.target,
+                    reward = "${challenge.xpReward} XP",
+                    isCompleted = progress >= challenge.target
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-                ChallengeCard(
-                    title = "Combo Master",
-                    description = "Reach a 10x combo",
-                    progress = 7,
-                    target = 10,
-                    reward = "75 XP",
-                    isCompleted = false
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                ChallengeCard(
-                    title = "Perfect Run",
-                    description = "Complete a game without hitting penalties",
-                    progress = 0,
-                    target = 1,
-                    reward = "100 XP",
-                    isCompleted = false
-                )
-            } else {
-                dailyChallenges.forEach { challenge ->
-                    val progress = challengeProgress[challenge.id] ?: 0
-                    ChallengeCard(
-                        title = challenge.title,
-                        description = challenge.description,
-                        progress = progress,
-                        target = challenge.target,
-                        reward = "${challenge.xpReward} XP",
-                        isCompleted = progress >= challenge.target
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -145,50 +149,29 @@ fun ChallengesScreen(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Resets in 4d 12h",
+                text = "Resets in $weeklyTimeRemaining",
                 color = Color.White.copy(alpha = 0.6f),
                 fontSize = 12.sp
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            val weeklyChallenges = activeChallenges.filter { !it.isDaily }
-            if (weeklyChallenges.isEmpty()) {
-                // Show placeholder weekly challenges
+            weeklyChallenges.forEach { challenge ->
+                val progress = challengeProgress[challenge.id] ?: 0
                 ChallengeCard(
-                    title = "Dedicated Player",
-                    description = "Play 20 games this week",
-                    progress = 8,
-                    target = 20,
-                    reward = "200 XP",
-                    isCompleted = false,
+                    title = challenge.title,
+                    description = challenge.description,
+                    progress = progress,
+                    target = challenge.target,
+                    reward = "${challenge.xpReward} XP",
+                    isCompleted = progress >= challenge.target,
                     accentColor = Color(0xFF9C27B0)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-                ChallengeCard(
-                    title = "High Scorer",
-                    description = "Score 5000 total points",
-                    progress = 2340,
-                    target = 5000,
-                    reward = "300 XP",
-                    isCompleted = false,
-                    accentColor = Color(0xFF9C27B0)
-                )
-            } else {
-                weeklyChallenges.forEach { challenge ->
-                    val progress = challengeProgress[challenge.id] ?: 0
-                    ChallengeCard(
-                        title = challenge.title,
-                        description = challenge.description,
-                        progress = progress,
-                        target = challenge.target,
-                        reward = "${challenge.xpReward} XP",
-                        isCompleted = progress >= challenge.target,
-                        accentColor = Color(0xFF9C27B0)
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
             }
+
+            // Bottom padding for better scroll experience
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
@@ -304,3 +287,20 @@ private fun ChallengeCard(
         }
     }
 }
+
+/**
+ * Format remaining time in milliseconds to a readable string.
+ */
+private fun formatTimeRemaining(remainingMs: Long): String {
+    val remaining = maxOf(0, remainingMs)
+    val hours = remaining / (1000 * 60 * 60)
+    val minutes = (remaining % (1000 * 60 * 60)) / (1000 * 60)
+
+    return when {
+        hours > 24 -> "${hours / 24}d ${hours % 24}h"
+        hours > 0 -> "${hours}h ${minutes}m"
+        minutes > 0 -> "${minutes}m"
+        else -> "<1m"
+    }
+}
+

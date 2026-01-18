@@ -8,9 +8,7 @@ import com.keren.virtualmoney.game.*
 import com.keren.virtualmoney.platform.CameraView
 import com.keren.virtualmoney.ui.screens.*
 
-/**
- * Navigation destinations in the app.
- */
+/** Navigation destinations in the app. */
 sealed class Screen {
     data object MainMenu : Screen()
     data object SinglePlayerMenu : Screen()
@@ -27,9 +25,7 @@ sealed class Screen {
 @Composable
 fun App() {
     // Initialize services once
-    LaunchedEffect(Unit) {
-        ServiceLocator.initialize()
-    }
+    LaunchedEffect(Unit) { ServiceLocator.initialize() }
 
     MaterialTheme {
         var currentScreen by remember { mutableStateOf<Screen>(Screen.MainMenu) }
@@ -56,87 +52,77 @@ fun App() {
         when (val screen = currentScreen) {
             is Screen.MainMenu -> {
                 MainMenuScreen(
-                    playerName = profile.displayName,
-                    playerLevel = profile.level,
-                    onSinglePlayer = { currentScreen = Screen.SinglePlayerMenu },
-                    onMultiplayer = { currentScreen = Screen.Multiplayer },
-                    onCustomize = { currentScreen = Screen.Customize },
-                    onChallenges = { currentScreen = Screen.Challenges },
-                    onProfile = { currentScreen = Screen.Profile },
-                    onSettings = { currentScreen = Screen.Settings },
-                    onLeaderboard = { currentScreen = Screen.Leaderboard }
+                        playerName = profile.displayName,
+                        playerLevel = profile.level,
+                        onSinglePlayer = { currentScreen = Screen.SinglePlayerMenu },
+                        onMultiplayer = { currentScreen = Screen.Multiplayer },
+                        onCustomize = { currentScreen = Screen.Customize },
+                        onChallenges = { currentScreen = Screen.Challenges },
+                        onProfile = { currentScreen = Screen.Profile },
+                        onSettings = { currentScreen = Screen.Settings },
+                        onLeaderboard = { currentScreen = Screen.Leaderboard }
                 )
             }
-
             is Screen.SinglePlayerMenu -> {
                 SinglePlayerMenuScreen(
-                    highScores = mapOf(
-                        GameMode.CLASSIC to stats.highScore,
-                        GameMode.BLITZ to stats.highScore,
-                        GameMode.SURVIVAL to stats.highScore
-                    ),
-                    onModeSelected = { mode -> currentScreen = Screen.Game(mode) },
-                    onBack = { currentScreen = Screen.MainMenu }
+                        highScores =
+                                mapOf(
+                                        GameMode.CLASSIC to stats.highScore,
+                                        GameMode.BLITZ to stats.highScore,
+                                        GameMode.SURVIVAL to stats.highScore
+                                ),
+                        onModeSelected = { mode -> currentScreen = Screen.Game(mode) },
+                        onBack = { currentScreen = Screen.MainMenu }
                 )
             }
-
             is Screen.Multiplayer -> {
                 MultiplayerMenuScreen(
-                    onModeSelected = { mode -> currentScreen = Screen.Game(mode) },
-                    onBack = { currentScreen = Screen.MainMenu }
+                        onModeSelected = { mode -> currentScreen = Screen.Game(mode) },
+                        onBack = { currentScreen = Screen.MainMenu }
                 )
             }
-
             is Screen.Customize -> {
                 CustomizeScreen(
-                    themes = themes,
-                    skins = skins,
-                    playerLevel = profile.level,
-                    onThemeSelected = { themeId -> ServiceLocator.themeManager.selectTheme(themeId) },
-                    onSkinSelected = { skinId -> ServiceLocator.themeManager.selectSkin(skinId) },
-                    onBack = { currentScreen = Screen.MainMenu }
+                        themes = themes,
+                        skins = skins,
+                        playerLevel = profile.level,
+                        onThemeSelected = { themeId ->
+                            ServiceLocator.themeManager.selectTheme(themeId)
+                        },
+                        onSkinSelected = { skinId ->
+                            ServiceLocator.themeManager.selectSkin(skinId)
+                        },
+                        onBack = { currentScreen = Screen.MainMenu }
                 )
             }
-
             is Screen.Challenges -> {
-                ChallengesScreen(
-                    onBack = { currentScreen = Screen.MainMenu }
-                )
+                ChallengesScreen(onBack = { currentScreen = Screen.MainMenu })
             }
-
             is Screen.Leaderboard -> {
-                LeaderboardScreen(
-                    onBack = { currentScreen = Screen.MainMenu }
-                )
+                LeaderboardScreen(onBack = { currentScreen = Screen.MainMenu })
             }
-
             is Screen.Profile -> {
-                ProfileScreen(
-                    onBack = { currentScreen = Screen.MainMenu }
-                )
+                ProfileScreen(onBack = { currentScreen = Screen.MainMenu })
             }
-
             is Screen.Settings -> {
-                SettingsScreen(
-                    onBack = { currentScreen = Screen.MainMenu }
-                )
+                SettingsScreen(onBack = { currentScreen = Screen.MainMenu })
             }
-
             is Screen.Game -> {
                 GameplayScreen(
-                    mode = screen.mode,
-                    cameraProvider = cameraProvider,
-                    cameraBackground = { CameraView() },
-                    onGameOver = { result -> currentScreen = Screen.GameOver(result) },
-                    onExit = { currentScreen = Screen.MainMenu }
+                        mode = screen.mode,
+                        cameraProvider = cameraProvider,
+                        cameraBackground = { CameraView() },
+                        onGameOver = { result -> currentScreen = Screen.GameOver(result) },
+                        onExit = {
+                            currentScreen = Screen.SinglePlayerMenu
+                        } // Fixed: Go to single player menu
                 )
             }
-
             is Screen.GameOver -> {
                 GameOverScreen(
-                    result = screen.result,
-                    onPlayAgain = { currentScreen = Screen.Game(screen.result.gameMode) },
-                    onMainMenu = { currentScreen = Screen.MainMenu }
+                        result = screen.result,
+                        onPlayAgain = { currentScreen = Screen.Game(screen.result.gameMode) },
+                        onMainMenu = { currentScreen = Screen.MainMenu }
                 )
             }
         }

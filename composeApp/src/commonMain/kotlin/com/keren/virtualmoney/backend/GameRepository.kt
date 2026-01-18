@@ -339,6 +339,19 @@ class GameRepository(private val authManager: AuthManager) {
         }
     }
 
+    /** Observe total online players. */
+    fun observeTotalOnlinePlayers(): Flow<Int> {
+        return presenceRef().valueEvents.map { snapshot ->
+            snapshot.children.count { child ->
+                try {
+                    child.child("online").value<Boolean>() == true
+                } catch (e: Exception) {
+                    false
+                }
+            }
+        }
+    }
+
     // ==================== Presence ====================
 
     /** Set user online presence. */
@@ -383,6 +396,119 @@ class GameRepository(private val authManager: AuthManager) {
                                     "inGame" to null
                             )
                     )
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // ==================== Shared Coins (Multiplayer Syncing) ====================
+
+    /** Observe shared coins for a game (all players see the same coins). */
+    fun observeSharedCoins(
+            gameId: String
+    ): Flow<Map<String, com.keren.virtualmoney.multiplayer.SharedCoin>> {
+        return gamesRef().child(gameId).child("sharedCoins").valueEvents.map { snapshot ->
+            try {
+                val coins = mutableMapOf<String, com.keren.virtualmoney.multiplayer.SharedCoin>()
+                snapshot.children.forEach { child ->
+                    try {
+                        val coin = child.value<com.keren.virtualmoney.multiplayer.SharedCoin>()
+                        coins[child.key ?: ""] = coin
+                    } catch (e: Exception) {
+                        // Skip invalid coins
+                    }
+                }
+                coins
+            } catch (e: Exception) {
+                emptyMap()
+            }
+        }
+    }
+
+    /**
+     * Attempt to collect a shared coin. Uses transaction to prevent race conditions (only one
+     * player can collect each coin).
+     */
+    suspend fun collectSharedCoin(
+            gameId: String,
+            coinId: String
+    ): Result<com.keren.virtualmoney.multiplayer.CoinCollectionResult> {
+        return try {
+            val userId = authManager.getUserId() ?: throw Exception("Not signed in")
+            val coinRef = gamesRef().child(gameId).child("sharedCoins").child(coinId)
+
+            // Get current coin state
+            val snapshot = coinRef.valueEvents.first()
+            val coin = snapshot.value<com.keren.virtualmoney.multiplayer.SharedCoin>()
+
+            // Check if coin is available
+            if (coin.collectedBy != null) {
+                return Result.success(
+                        com.keren.virtualmoney.multiplayer.CoinCollectionResult(
+                                success = false,
+                                points = 0,
+                                message = "Coin already collected",
+                                collectedBy = coin.collectedBy
+                        )
+                )
+            }
+
+            // Mark as collected
+            coinRef.child("collectedBy").setValue(userId)
+
+            // Calculate points
+            val points = com.keren.virtualmoney.game.Coin.getValue(coin.getCoinType())
+
+            Result.success(
+                    com.keren.virtualmoney.multiplayer.CoinCollectionResult(
+                            success = true,
+                            points = points,
+                            message = "Coin collected successfully",
+                            collectedBy = userId
+                    )
+            )
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Spawn a shared coin in the game (server-side spawning). This should typically be called by a
+     * Cloud Function or game host.
+     */
+    suspend fun spawnSharedCoin(
+            gameId: String,
+            coin: com.keren.virtualmoney.multiplayer.SharedCoin
+    ): Result<Unit> {
+        return try {
+            gamesRef().child(gameId).child("sharedCoins").child(coin.id).setValue(coin)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /** Remove collected or expired coins from the game. */
+    suspend fun cleanupSharedCoins(gameId: String): Result<Unit> {
+        return try {
+            val now = getCurrentTimeMillis()
+            val snapshot = gamesRef().child(gameId).child("sharedCoins").valueEvents.first()
+
+            snapshot.children.forEach { child ->
+                try {
+                    val coin = child.value<com.keren.virtualmoney.multiplayer.SharedCoin>()
+                    // Remove if collected for >1s or expired
+                    if ((coin.collectedBy != null && now - coin.spawnTime > 1000) ||
+                                    coin.isExpired(now)
+                    ) {
+                        child.ref.removeValue()
+                    }
+                } catch (e: Exception) {
+                    // Skip invalid entries
+                }
+            }
 
             Result.success(Unit)
         } catch (e: Exception) {

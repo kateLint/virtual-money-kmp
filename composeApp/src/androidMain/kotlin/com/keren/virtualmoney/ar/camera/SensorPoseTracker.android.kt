@@ -12,35 +12,34 @@ import com.keren.virtualmoney.ar.math.Vector3D
 import kotlin.math.sqrt
 
 /**
- * Tracks device pose using sensor data (rotation vector sensor).
- * This is used as a fallback when ARCore is not available.
+ * Tracks device pose using sensor data (rotation vector sensor). This is used as a fallback when
+ * ARCore is not available.
  *
- * The rotation vector sensor provides device orientation by fusing data from
- * accelerometer, gyroscope, and magnetometer. It outputs a rotation vector
- * that can be converted to a rotation matrix and then to a quaternion.
+ * The rotation vector sensor provides device orientation by fusing data from accelerometer,
+ * gyroscope, and magnetometer. It outputs a rotation vector that can be converted to a rotation
+ * matrix and then to a quaternion.
  *
- * Note: This implementation only tracks orientation (rotation), not position.
- * Position is kept at the origin (0, 0, 0) since sensors don't provide positional tracking.
+ * Note: This implementation only tracks orientation (rotation), not position. Position is kept at
+ * the origin (0, 0, 0) since sensors don't provide positional tracking.
  *
  * @property context Android context for accessing system services
  * @property onPoseUpdate Callback invoked when a new pose is available
  */
-class SensorPoseTracker(
-    private val context: Context,
-    private val onPoseUpdate: (Pose) -> Unit
-) : SensorEventListener {
+class SensorPoseTracker(private val context: Context, private val onPoseUpdate: (Pose) -> Unit) :
+        SensorEventListener {
 
     private val sensorManager: SensorManager =
-        context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+            context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
     private val rotationVectorSensor: Sensor? =
-        sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+            sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
 
     private var isTracking = false
+    private var anchorRotation: Quaternion? = null
 
     /**
-     * Start tracking device orientation using sensors.
-     * Registers a listener for the rotation vector sensor.
+     * Start tracking device orientation using sensors. Registers a listener for the rotation vector
+     * sensor.
      */
     fun start() {
         if (rotationVectorSensor == null) {
@@ -48,11 +47,12 @@ class SensorPoseTracker(
             return
         }
 
-        val success = sensorManager.registerListener(
-            this,
-            rotationVectorSensor,
-            SensorManager.SENSOR_DELAY_GAME // Good balance between accuracy and battery
-        )
+        val success =
+                sensorManager.registerListener(
+                        this,
+                        rotationVectorSensor,
+                        SensorManager.SENSOR_DELAY_GAME // Good balance between accuracy and battery
+                )
 
         if (success) {
             isTracking = true
@@ -62,9 +62,7 @@ class SensorPoseTracker(
         }
     }
 
-    /**
-     * Stop tracking and unregister sensor listeners.
-     */
+    /** Stop tracking and unregister sensor listeners. */
     fun stop() {
         if (isTracking) {
             sensorManager.unregisterListener(this)
@@ -74,8 +72,7 @@ class SensorPoseTracker(
     }
 
     /**
-     * Called when sensor values change.
-     * Converts rotation vector to quaternion and updates pose.
+     * Called when sensor values change. Converts rotation vector to quaternion and updates pose.
      *
      * @param event The sensor event containing rotation vector data
      */
@@ -89,14 +86,49 @@ class SensorPoseTracker(
             val rotationMatrix = FloatArray(9)
             SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
 
+            // Remap coordinate system to match AR camera frame
+            // Default sensor: X=East, Y=North, Z=Up
+            // We want: X=Right, Y=Up, Z=Back (Standard Android Camera coord)
+            val remappedMatrix = FloatArray(9)
+            SensorManager.remapCoordinateSystem(
+                    rotationMatrix,
+                    SensorManager.AXIS_X,
+                    SensorManager.AXIS_Z,
+                    remappedMatrix
+            )
+
             // Convert rotation matrix to quaternion
-            val quaternion = rotationMatrixToQuaternion(rotationMatrix)
+            // This quaternion represents "Device to World" rotation (D_t -> W)
+            val deviceToWorld = rotationMatrixToQuaternion(remappedMatrix)
+
+            // Initialize anchor on first frame
+            // We want 'anchor' to be World -> Device_0 (W -> D_0)
+            // So we take the inverse of the first Device -> World
+            var currentAnchor = anchorRotation
+            if (currentAnchor == null) {
+                currentAnchor = deviceToWorld.inverse()
+                anchorRotation = currentAnchor
+            }
+
+            // Calculate rotation relative to the anchor
+            // We want Pose.rotation to be Device_Current -> Device_Initial (D_t -> D_0)
+            // Chain: D_t -> W -> D_0
+            // Rotation Multiplication: q2 * q1 means apply q1 then q2.
+            // So: anchor * deviceToWorld
+            // Apply deviceToWorld (D_t -> W) then anchor (W -> D_0)
+            val relativeRotation = currentAnchor * deviceToWorld
+
+            // LOGGING to verify tracking
+            if (Math.random() < 0.05) {
+                Log.d(TAG, "Rel Rotation: $relativeRotation")
+            }
 
             // Create pose with orientation from sensors and position at origin
-            val pose = Pose(
-                position = Vector3D.ZERO, // Sensors don't provide position
-                rotation = quaternion
-            )
+            val pose =
+                    Pose(
+                            position = Vector3D.ZERO, // Sensors don't provide position
+                            rotation = relativeRotation
+                    )
 
             // Notify callback with new pose
             onPoseUpdate(pose)
@@ -106,33 +138,25 @@ class SensorPoseTracker(
     }
 
     /**
-     * Called when sensor accuracy changes.
-     * We log this for debugging but don't need to take action.
+     * Called when sensor accuracy changes. We log this for debugging but don't need to take action.
      *
      * @param sensor The sensor whose accuracy changed
      * @param accuracy The new accuracy value
      */
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
         when (accuracy) {
-            SensorManager.SENSOR_STATUS_UNRELIABLE ->
-                Log.w(TAG, "Sensor accuracy: UNRELIABLE")
-            SensorManager.SENSOR_STATUS_ACCURACY_LOW ->
-                Log.w(TAG, "Sensor accuracy: LOW")
-            SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM ->
-                Log.d(TAG, "Sensor accuracy: MEDIUM")
-            SensorManager.SENSOR_STATUS_ACCURACY_HIGH ->
-                Log.d(TAG, "Sensor accuracy: HIGH")
+            SensorManager.SENSOR_STATUS_UNRELIABLE -> Log.w(TAG, "Sensor accuracy: UNRELIABLE")
+            SensorManager.SENSOR_STATUS_ACCURACY_LOW -> Log.w(TAG, "Sensor accuracy: LOW")
+            SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM -> Log.d(TAG, "Sensor accuracy: MEDIUM")
+            SensorManager.SENSOR_STATUS_ACCURACY_HIGH -> Log.d(TAG, "Sensor accuracy: HIGH")
         }
     }
 
     /**
-     * Converts a 3x3 rotation matrix to a quaternion.
-     * Uses the trace-based algorithm with 4 cases for numerical stability.
+     * Converts a 3x3 rotation matrix to a quaternion. Uses the trace-based algorithm with 4 cases
+     * for numerical stability.
      *
-     * The rotation matrix is in row-major order:
-     * [ m0  m1  m2 ]
-     * [ m3  m4  m5 ]
-     * [ m6  m7  m8 ]
+     * The rotation matrix is in row-major order: [ m0 m1 m2 ] [ m3 m4 m5 ] [ m6 m7 m8 ]
      *
      * @param m The rotation matrix as a 9-element float array (row-major)
      * @return A normalized quaternion representing the same rotation

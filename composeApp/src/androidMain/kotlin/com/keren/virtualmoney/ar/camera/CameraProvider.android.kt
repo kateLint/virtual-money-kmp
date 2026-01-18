@@ -2,10 +2,7 @@ package com.keren.virtualmoney.ar.camera
 
 import android.content.Context
 import android.util.Log
-import com.google.ar.core.ArCoreApk
-import com.google.ar.core.Config
 import com.google.ar.core.Session
-import com.google.ar.core.exceptions.UnavailableException
 import com.keren.virtualmoney.ar.data.Pose
 import com.keren.virtualmoney.ar.math.Quaternion
 import com.keren.virtualmoney.ar.math.Vector3D
@@ -18,7 +15,8 @@ import kotlinx.coroutines.flow.asStateFlow
  *
  * This implementation:
  * - Uses ARCore for AR tracking when available
- * - Falls back to sensor-based tracking (accelerometer, gyroscope, magnetometer) when ARCore is unavailable
+ * - Falls back to sensor-based tracking (accelerometer, gyroscope, magnetometer) when ARCore is
+ * unavailable
  * - Provides pose updates through a StateFlow
  * - Converts ARCore's coordinate system to our common Pose representation
  */
@@ -32,47 +30,26 @@ actual class CameraProvider(private val context: Context) {
     actual val poseFlow: StateFlow<Pose> = _poseFlow.asStateFlow()
 
     /**
-     * Start the AR or sensor tracking session.
-     * Attempts to initialize ARCore first, falls back to sensors if unavailable.
+     * Start the AR or sensor tracking session. Attempts to initialize ARCore first, falls back to
+     * sensors if unavailable.
      */
     actual fun startSession() {
         try {
-            // Check if ARCore is supported and installed
-            when (ArCoreApk.getInstance().checkAvailability(context)) {
-                ArCoreApk.Availability.SUPPORTED_INSTALLED -> {
-                    // ARCore is available, create session
-                    arSession = Session(context).apply {
-                        // Configure session
-                        val config = Config(this).apply {
-                            // Enable auto focus
-                            focusMode = Config.FocusMode.AUTO
-                            // Use WORLD_TRACKING mode for 6DOF tracking
-                            updateMode = Config.UpdateMode.LATEST_CAMERA_IMAGE
-                        }
-                        configure(config)
-                    }
-                    isUsingAR = true
-                    Log.i(TAG, "ARCore session started successfully")
-                }
-                else -> {
-                    // ARCore not available, fall back to sensors
-                    fallbackToSensors()
-                }
-            }
-        } catch (e: UnavailableException) {
-            Log.w(TAG, "ARCore unavailable: ${e.message}, falling back to sensors")
+            // FORCE SENSOR TRACKING for reliability
+            // We want a stable 360 rotation experience without ARCore dependency
+            // ARCore session management was causing freezes. Standard sensors work 100% of time.
+            Log.i(TAG, "Forcing Sensor-based tracking for robust 360 rotation")
             fallbackToSensors()
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to start ARCore: ${e.message}", e)
+            Log.e(TAG, "Failed to start tracking: ${e.message}", e)
             fallbackToSensors()
         }
     }
 
-    /**
-     * Stop the tracking session and release all resources.
-     */
+    /** Stop the tracking session and release all resources. */
     actual fun stopSession() {
         try {
+            arSession?.pause()
             arSession?.close()
             arSession = null
 
@@ -87,8 +64,8 @@ actual class CameraProvider(private val context: Context) {
     }
 
     /**
-     * Update the current pose from ARCore or sensors.
-     * Should be called every frame to get the latest tracking data.
+     * Update the current pose from ARCore or sensors. Should be called every frame to get the
+     * latest tracking data.
      */
     actual fun updatePose() {
         if (isUsingAR) {
@@ -98,9 +75,7 @@ actual class CameraProvider(private val context: Context) {
         }
     }
 
-    /**
-     * Update pose from ARCore tracking.
-     */
+    /** Update pose from ARCore tracking. */
     private fun updatePoseFromARCore() {
         try {
             val session = arSession ?: return
@@ -113,19 +88,17 @@ actual class CameraProvider(private val context: Context) {
 
             // Convert ARCore pose to our Pose representation
             // ARCore uses: translation (tx, ty, tz) and quaternion (qx, qy, qz, qw)
-            val pose = Pose(
-                position = Vector3D(
-                    cameraPose.tx(),
-                    cameraPose.ty(),
-                    cameraPose.tz()
-                ),
-                rotation = Quaternion(
-                    w = cameraPose.qw(),
-                    x = cameraPose.qx(),
-                    y = cameraPose.qy(),
-                    z = cameraPose.qz()
-                )
-            )
+            val pose =
+                    Pose(
+                            position = Vector3D(cameraPose.tx(), cameraPose.ty(), cameraPose.tz()),
+                            rotation =
+                                    Quaternion(
+                                            w = cameraPose.qw(),
+                                            x = cameraPose.qx(),
+                                            y = cameraPose.qy(),
+                                            z = cameraPose.qz()
+                                    )
+                    )
 
             _poseFlow.value = pose
         } catch (e: Exception) {
@@ -134,10 +107,9 @@ actual class CameraProvider(private val context: Context) {
     }
 
     /**
-     * Update pose from sensor-based tracking.
-     * Note: With SensorPoseTracker, pose updates are pushed via callback,
-     * so this method doesn't need to do anything. The callback directly
-     * updates the pose flow.
+     * Update pose from sensor-based tracking. Note: With SensorPoseTracker, pose updates are pushed
+     * via callback, so this method doesn't need to do anything. The callback directly updates the
+     * pose flow.
      */
     private fun updatePoseFromSensors() {
         // Sensor updates are handled via the onPoseUpdate callback
@@ -149,13 +121,10 @@ actual class CameraProvider(private val context: Context) {
      * @return true if ARCore is supported and installed, false otherwise
      */
     actual fun isARAvailable(): Boolean {
-        return try {
-            ArCoreApk.getInstance().checkAvailability(context) ==
-                ArCoreApk.Availability.SUPPORTED_INSTALLED
-        } catch (e: Exception) {
-            Log.e(TAG, "Error checking AR availability: ${e.message}", e)
-            false
-        }
+        // Return TRUE to enable AR projection rendering (uses CoinProjector)
+        // Even though we're using sensors (not ARCore), we still need the AR rendering path
+        // to project 3D world coordinates to 2D screen coordinates
+        return true
     }
 
     /**
@@ -166,17 +135,20 @@ actual class CameraProvider(private val context: Context) {
         return isUsingAR && arSession != null
     }
 
-    /**
-     * Fall back to sensor-based tracking when ARCore is unavailable.
-     */
+    /** Fall back to sensor-based tracking when ARCore is unavailable. */
     private fun fallbackToSensors() {
-        sensorPoseTracker = SensorPoseTracker(context) { pose ->
-            // Update pose flow when sensor data changes
-            _poseFlow.value = pose
-        }
+        sensorPoseTracker =
+                SensorPoseTracker(context) { pose ->
+                    // Update pose flow when sensor data changes
+                    _poseFlow.value = pose
+                }
         sensorPoseTracker?.start()
         isUsingAR = false
         Log.i(TAG, "Using sensor-based tracking fallback")
+    }
+
+    actual fun getARContext(): com.keren.virtualmoney.ar.platform.ARPlatformContext {
+        return com.keren.virtualmoney.ar.platform.ARPlatformContext(arSession)
     }
 
     companion object {

@@ -12,32 +12,29 @@ import kotlinx.coroutines.flow.StateFlow
  * - Fall back to device sensors (accelerometer, gyroscope, magnetometer) when AR is unavailable
  * - Provide continuous pose updates through the poseFlow
  *
- * The sensor fallback enables basic tracking on devices without AR support,
- * though with reduced accuracy compared to full AR tracking.
+ * The sensor fallback enables basic tracking on devices without AR support, though with reduced
+ * accuracy compared to full AR tracking.
  */
 expect class CameraProvider {
     /**
-     * Start the AR or sensor tracking session.
-     * Should initialize AR framework if available, otherwise fall back to sensors.
+     * Start the AR or sensor tracking session. Should initialize AR framework if available,
+     * otherwise fall back to sensors.
      */
     fun startSession()
 
     /**
-     * Stop the tracking session and release all resources.
-     * Should properly clean up AR session or sensor listeners.
+     * Stop the tracking session and release all resources. Should properly clean up AR session or
+     * sensor listeners.
      */
     fun stopSession()
 
     /**
-     * Update the current pose from AR or sensors.
-     * Should be called every frame (from game loop) to get the latest tracking data.
+     * Update the current pose from AR or sensors. Should be called every frame (from game loop) to
+     * get the latest tracking data.
      */
     fun updatePose()
 
-    /**
-     * Reactive stream of pose updates.
-     * Emits new Pose values as the device moves and rotates.
-     */
+    /** Reactive stream of pose updates. Emits new Pose values as the device moves and rotates. */
     val poseFlow: StateFlow<Pose>
 
     /**
@@ -51,4 +48,7 @@ expect class CameraProvider {
      * @return true if AR is active, false if using sensor fallback
      */
     fun isARActive(): Boolean
+
+    /** Returns the platform-specific AR context (e.g., wrapper around ARSession). */
+    fun getARContext(): com.keren.virtualmoney.ar.platform.ARPlatformContext
 }
